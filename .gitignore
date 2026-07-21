@@ -24,3 +24,4 @@ dist-ssr
 
 # Test / coverage
 coverage
+*.tsbuildinfo
