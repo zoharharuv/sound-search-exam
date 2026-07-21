@@ -3,6 +3,7 @@ import {
   initialPaginationState,
   moveToNextPage,
   moveToPreviousPage,
+  resetPagination,
   setNextCursor,
 } from "@/domain/pagination";
 
@@ -36,5 +37,16 @@ describe("cursor pagination", () => {
     expect(moveToPreviousPage(initialPaginationState)).toBe(
       initialPaginationState,
     );
+  });
+
+  it("resets cursor history when a new search starts", () => {
+    const pagedState = {
+      currentCursor: "page-2",
+      previousCursors: [null],
+      nextCursor: "page-3",
+    } as const;
+
+    expect(resetPagination()).toEqual(initialPaginationState);
+    expect(resetPagination()).not.toEqual(pagedState);
   });
 });
