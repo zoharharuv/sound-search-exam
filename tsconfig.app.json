@@ -22,10 +22,9 @@
 
     "types": ["vitest/globals", "@testing-library/jest-dom"],
 
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "test"]
 }
