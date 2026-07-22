@@ -38,4 +38,21 @@ describe("local storage adapters", () => {
     expect(loadSearchHistory()).toEqual([]);
     expect(loadViewMode()).toBe("list");
   });
+
+  it("handles malformed persisted shapes without throwing", () => {
+    window.localStorage.setItem(
+      "sound-search:recent-searches",
+      JSON.stringify({ query: "Ambient" }),
+    );
+    expect(loadSearchHistory()).toEqual([]);
+
+    window.localStorage.setItem(
+      "sound-search:recent-searches",
+      JSON.stringify(["Ambient", 42, null, "Jazz"]),
+    );
+    expect(loadSearchHistory()).toEqual(["Ambient", "Jazz"]);
+
+    window.localStorage.setItem("sound-search:preferences", "not-json");
+    expect(loadViewMode()).toBe("list");
+  });
 });

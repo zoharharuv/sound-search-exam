@@ -9,6 +9,13 @@ describe("addRecentSearch", () => {
     ]);
   });
 
+  it("trims outer whitespace, moves a case-insensitive duplicate, and keeps the newest casing", () => {
+    expect(addRecentSearch(["deep house", "Jazz"], " Deep House ")).toEqual([
+      "Deep House",
+      "Jazz",
+    ]);
+  });
+
   it("keeps at most five recent searches", () => {
     expect(
       addRecentSearch(["two", "three", "four", "five", "six"], "one"),
