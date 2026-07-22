@@ -11,6 +11,15 @@ export interface PaginationCursorState {
   readonly nextCursor: Cursor | null;
 }
 
+export type PaginationDirection = "next" | "previous";
+
+/** A page change that is committed only after its request succeeds. */
+export interface PaginationTransition {
+  readonly direction: PaginationDirection;
+  readonly fromCursor: Cursor | null;
+  readonly targetCursor: Cursor | null;
+}
+
 export const initialPaginationState: PaginationCursorState = {
   currentCursor: null,
   previousCursors: [],
@@ -21,39 +30,53 @@ export function resetPagination(): PaginationCursorState {
   return initialPaginationState;
 }
 
-export function setNextCursor(
+export function acceptLoadedPage(
   state: PaginationCursorState,
+  cursor: Cursor | null,
   nextCursor: Cursor | null,
 ): PaginationCursorState {
+  if (state.currentCursor !== cursor) return state;
+
   return { ...state, nextCursor };
 }
 
 /**
- * Records the current cursor before advancing. Callers must invoke this only
- * when the requested page transition has succeeded.
+ * Commits a successful transition only if it still matches the current state.
+ * This prevents duplicate or out-of-order responses from corrupting history.
  */
-export function moveToNextPage(
+export function completePageTransition(
   state: PaginationCursorState,
+  transition: PaginationTransition,
+  nextCursor: Cursor | null,
 ): PaginationCursorState {
-  if (state.nextCursor === null) return state;
+  if (state.currentCursor !== transition.fromCursor) return state;
+
+  if (transition.direction === "next") {
+    if (
+      transition.targetCursor === null ||
+      state.nextCursor !== transition.targetCursor
+    ) {
+      return state;
+    }
+
+    return {
+      currentCursor: transition.targetCursor,
+      previousCursors: [...state.previousCursors, transition.fromCursor],
+      nextCursor,
+    };
+  }
+
+  const expectedPreviousCursor = state.previousCursors.at(-1);
+  if (
+    expectedPreviousCursor === undefined ||
+    expectedPreviousCursor !== transition.targetCursor
+  ) {
+    return state;
+  }
 
   return {
-    currentCursor: state.nextCursor,
-    previousCursors: [...state.previousCursors, state.currentCursor],
-    nextCursor: null,
-  };
-}
-
-/** Restores the most recently visited cursor without interpreting its value. */
-export function moveToPreviousPage(
-  state: PaginationCursorState,
-): PaginationCursorState {
-  const previousCursor = state.previousCursors.at(-1);
-  if (previousCursor === undefined) return state;
-
-  return {
-    currentCursor: previousCursor,
+    currentCursor: transition.targetCursor,
     previousCursors: state.previousCursors.slice(0, -1),
-    nextCursor: state.currentCursor,
+    nextCursor,
   };
 }

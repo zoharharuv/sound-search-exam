@@ -8,4 +8,5 @@ export interface Sound {
   readonly title: string;
   readonly url: string;
   readonly artworkUrl: string | null;
+  readonly embedUrl: string | null;
 }
