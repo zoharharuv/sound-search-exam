@@ -1,12 +1,21 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { Cursor } from "@/domain/pagination";
 import {
+  acceptLoadedPage,
+  completePageTransition,
   initialPaginationState,
-  moveToNextPage,
-  moveToPreviousPage,
   resetPagination,
-  setNextCursor,
+  type PaginationTransition,
 } from "@/domain/pagination";
+
+interface PageLoadedPayload {
+  readonly cursor: Cursor | null;
+  readonly nextCursor: Cursor | null;
+}
+
+interface PageTransitionSucceededPayload extends PaginationTransition {
+  readonly nextCursor: Cursor | null;
+}
 
 // Redux coordinates navigation cursors; provider paging values stay opaque.
 const paginationSlice = createSlice({
@@ -14,17 +23,16 @@ const paginationSlice = createSlice({
   initialState: initialPaginationState,
   reducers: {
     paginationReset: () => resetPagination(),
-    nextCursorReceived: (state, action: PayloadAction<Cursor | null>) =>
-      setNextCursor(state, action.payload),
-    nextPageRequested: (state) => moveToNextPage(state),
-    previousPageRequested: (state) => moveToPreviousPage(state),
+    pageLoaded: (state, action: PayloadAction<PageLoadedPayload>) =>
+      acceptLoadedPage(state, action.payload.cursor, action.payload.nextCursor),
+    pageTransitionSucceeded: (
+      state,
+      action: PayloadAction<PageTransitionSucceededPayload>,
+    ) =>
+      completePageTransition(state, action.payload, action.payload.nextCursor),
   },
 });
 
-export const {
-  nextCursorReceived,
-  nextPageRequested,
-  paginationReset,
-  previousPageRequested,
-} = paginationSlice.actions;
+export const { pageLoaded, pageTransitionSucceeded, paginationReset } =
+  paginationSlice.actions;
 export const paginationReducer = paginationSlice.reducer;
