@@ -1,10 +1,9 @@
-import { type FormEvent, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Pagination } from "@/components/Pagination";
+import { SearchBar } from "@/components/SearchBar";
+import { SearchResults } from "@/components/SearchResults";
+import { useSoundSearch } from "@/hooks/use-sound-search";
 import type { AppDispatch, RootState } from "@/store/store";
-import {
-  nextPageRequested,
-  previousPageRequested,
-} from "@/store/pagination-slice";
 import { viewModeChanged } from "@/store/view-mode-slice";
 
 export function SoundSearchPage() {
@@ -12,13 +11,8 @@ export function SoundSearchPage() {
   const recentSearches = useSelector(
     (state: RootState) => state.recentSearches.items,
   );
-  const pagination = useSelector((state: RootState) => state.pagination);
   const viewMode = useSelector((state: RootState) => state.viewMode.value);
-  const [query, setQuery] = useState("");
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-  }
+  const search = useSoundSearch();
 
   return (
     <main className="mx-auto flex min-h-full max-w-5xl flex-col gap-8 p-6">
@@ -30,44 +24,34 @@ export function SoundSearchPage() {
         <h2 id="search-heading" className="text-xl font-medium">
           Search
         </h2>
-        <form className="mt-3 flex gap-3" onSubmit={handleSubmit}>
-          <label className="sr-only" htmlFor="sound-search-query">
-            Search sounds
-          </label>
-          <input
-            id="sound-search-query"
-            className="min-w-0 flex-1 rounded border border-surface-border bg-surface-raised px-3 py-2"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search sounds"
-            type="search"
-            value={query}
-          />
-          <button className="rounded bg-accent px-4 py-2" type="submit">
-            Go
-          </button>
-        </form>
+        <SearchBar
+          isSearching={search.isLoading}
+          onQueryChange={search.setQuery}
+          onSubmit={search.submitSearch}
+          query={search.query}
+        />
       </section>
 
       <section aria-labelledby="results-heading">
         <h2 id="results-heading" className="text-xl font-medium">
           Search results
         </h2>
-        <p className="mt-3 text-slate-400">Search results will appear here.</p>
+        <SearchResults
+          errorMessage={search.errorMessage}
+          hasSearched={search.hasSearched}
+          isEmpty={search.isEmpty}
+          isLoading={search.isLoading}
+          onRetry={search.retry}
+          results={search.results}
+        />
         <nav aria-label="Search result controls" className="mt-4 flex gap-3">
-          <button
-            disabled={pagination.previousCursors.length === 0}
-            onClick={() => dispatch(previousPageRequested())}
-            type="button"
-          >
-            Previous
-          </button>
-          <button
-            disabled={pagination.nextCursor === null}
-            onClick={() => dispatch(nextPageRequested())}
-            type="button"
-          >
-            Next
-          </button>
+          <Pagination
+            canGoNext={search.canGoNext}
+            canGoPrevious={search.canGoPrevious}
+            isPending={search.isNavigationPending}
+            onNext={search.goToNextPage}
+            onPrevious={search.goToPreviousPage}
+          />
           <button
             aria-pressed={viewMode === "list"}
             onClick={() => dispatch(viewModeChanged("list"))}
@@ -102,7 +86,10 @@ export function SoundSearchPage() {
           <ul className="mt-3">
             {recentSearches.map((recentQuery) => (
               <li key={recentQuery}>
-                <button onClick={() => setQuery(recentQuery)} type="button">
+                <button
+                  onClick={() => search.searchRecent(recentQuery)}
+                  type="button"
+                >
                   {recentQuery}
                 </button>
               </li>
