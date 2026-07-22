@@ -8,6 +8,7 @@ export interface HttpClientOptions {
 export interface ApiRequestErrorOptions {
   readonly status?: number;
   readonly code?: string;
+  readonly isCancelled?: boolean;
   readonly cause?: unknown;
 }
 
@@ -15,6 +16,7 @@ export interface ApiRequestErrorOptions {
 export class ApiRequestError extends Error {
   readonly status: number | null;
   readonly code: string | null;
+  readonly isCancelled: boolean;
   readonly cause: unknown;
 
   constructor(message: string, options: ApiRequestErrorOptions = {}) {
@@ -22,13 +24,27 @@ export class ApiRequestError extends Error {
     this.name = "ApiRequestError";
     this.status = options.status ?? null;
     this.code = options.code ?? null;
+    this.isCancelled = options.isCancelled ?? false;
     this.cause = options.cause;
   }
+}
+
+/** Identifies an aborted request without exposing Axios types to consumers. */
+export function isApiRequestCancelled(error: unknown): boolean {
+  return error instanceof ApiRequestError && error.isCancelled;
 }
 
 /** Converts transport and unexpected failures into the application's stable error shape. */
 function normalizeApiError(error: unknown): ApiRequestError {
   if (error instanceof ApiRequestError) return error;
+
+  if (axios.isCancel(error)) {
+    return new ApiRequestError("The API request was cancelled.", {
+      code: error.code ?? "ERR_CANCELED",
+      isCancelled: true,
+      cause: error,
+    });
+  }
 
   if (axios.isAxiosError(error)) {
     return new ApiRequestError(error.message, {
