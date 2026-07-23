@@ -13,14 +13,25 @@ const playableSound: Sound = {
   embedUrl: "https://player.test/aurora/?autoplay=1",
 };
 
-function PreviewHarness({ sound }: { readonly sound: Sound }) {
+interface PreviewHarnessProps {
+  readonly sound: Sound;
+  readonly shouldCenterArtwork: boolean;
+  readonly shouldReduceMotion: boolean;
+}
+
+function PreviewHarness({
+  sound,
+  shouldCenterArtwork,
+  shouldReduceMotion,
+}: PreviewHarnessProps) {
   const [isPlayerMounted, setIsPlayerMounted] = useState(false);
 
   return (
     <SoundPreview
       isPlayerMounted={isPlayerMounted}
       onRequestPlayer={() => setIsPlayerMounted(true)}
-      shouldReduceMotion
+      shouldCenterArtwork={shouldCenterArtwork}
+      shouldReduceMotion={shouldReduceMotion}
       sound={sound}
     />
   );
@@ -28,33 +39,76 @@ function PreviewHarness({ sound }: { readonly sound: Sound }) {
 
 describe("SoundPreview", () => {
   it("focuses the artwork and mounts the unchanged embed URL only after activation", async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
     const user = userEvent.setup();
-    render(<PreviewHarness sound={playableSound} />);
+    const { rerender } = render(
+      <PreviewHarness
+        shouldCenterArtwork={false}
+        shouldReduceMotion={false}
+        sound={playableSound}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: "Load player for Aurora Session",
+      }),
+    ).toHaveFocus();
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    const centeredSound: Sound = {
+      ...playableSound,
+      id: "/artist/centered/",
+      title: "Centered Session",
+      embedUrl: "https://player.test/centered/?autoplay=1",
+    };
+    rerender(
+      <PreviewHarness
+        shouldCenterArtwork
+        shouldReduceMotion={false}
+        sound={centeredSound}
+      />,
+    );
 
     const artworkButton = screen.getByRole("button", {
-      name: "Load player for Aurora Session",
+      name: "Load player for Centered Session",
     });
     expect(artworkButton).toHaveFocus();
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      behavior: "smooth",
+      block: "center",
+    });
     expect(
-      screen.queryByTitle("Player for Aurora Session"),
+      screen.queryByTitle("Player for Centered Session"),
     ).not.toBeInTheDocument();
 
     await user.click(artworkButton);
 
-    const player = screen.getByTitle("Player for Aurora Session");
-    expect(player).toHaveAttribute("src", playableSound.embedUrl);
+    const player = screen.getByTitle("Player for Centered Session");
+    expect(player).toHaveAttribute("src", centeredSound.embedUrl);
     expect(player).toHaveAttribute("allow", "autoplay");
 
     const mountedPlayer = player;
     await user.click(
       screen.getByRole("button", {
-        name: "Player loaded for Aurora Session",
+        name: "Player loaded for Centered Session",
       }),
     );
-    expect(screen.getByTitle("Player for Aurora Session")).toBe(mountedPlayer);
+    expect(screen.getByTitle("Player for Centered Session")).toBe(
+      mountedPlayer,
+    );
   });
 
   it("renders artwork and playback fallbacks without mounting an iframe", async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scrollIntoView,
+    });
     const unavailableSound: Sound = {
       ...playableSound,
       id: "/artist/unavailable/",
@@ -68,6 +122,7 @@ describe("SoundPreview", () => {
       <SoundPreview
         isPlayerMounted={false}
         onRequestPlayer={onRequestPlayer}
+        shouldCenterArtwork
         shouldReduceMotion
         sound={unavailableSound}
       />,
@@ -78,10 +133,12 @@ describe("SoundPreview", () => {
     });
     expect(unavailableArtwork).toHaveAttribute("aria-disabled", "true");
     expect(unavailableArtwork).toHaveFocus();
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      behavior: "auto",
+      block: "center",
+    });
     expect(
-      screen.getByText(
-        "Unavailable Session selected. Playback unavailable.",
-      ),
+      screen.getByText("Unavailable Session selected. Playback unavailable."),
     ).toBeInTheDocument();
     await user.click(unavailableArtwork);
     expect(onRequestPlayer).not.toHaveBeenCalled();
@@ -95,6 +152,7 @@ describe("SoundPreview", () => {
       <SoundPreview
         isPlayerMounted={false}
         onRequestPlayer={() => undefined}
+        shouldCenterArtwork={false}
         shouldReduceMotion
         sound={null}
       />,

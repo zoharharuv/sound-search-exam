@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LayoutGroup, MotionConfig, useReducedMotion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import { Pagination } from "@/components/Pagination";
@@ -23,6 +23,10 @@ export function SoundSearchPage() {
   const shouldReduceMotion = useReducedMotion() ?? false;
   const [selectedSound, setSelectedSound] = useState<Sound | null>(null);
   const [isPlayerMounted, setIsPlayerMounted] = useState(false);
+  const [paginationLayoutMinHeight, setPaginationLayoutMinHeight] = useState<
+    number | null
+  >(null);
+  const pageLayoutRef = useRef<HTMLDivElement>(null);
 
   const clearPreview = useCallback(() => {
     setSelectedSound(null);
@@ -52,6 +56,24 @@ export function SoundSearchPage() {
     selectedSound,
   ]);
 
+  useEffect(() => {
+    if (search.isNavigationPending || paginationLayoutMinHeight === null) {
+      return;
+    }
+
+    const animationFrame = window.requestAnimationFrame(() => {
+      setPaginationLayoutMinHeight(null);
+    });
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [paginationLayoutMinHeight, search.isNavigationPending]);
+
+  function preservePaginationLayout() {
+    const currentHeight = pageLayoutRef.current?.getBoundingClientRect().height;
+    if (currentHeight && currentHeight > 0) {
+      setPaginationLayoutMinHeight(currentHeight);
+    }
+  }
+
   function handleQueryChange(nextQuery: string) {
     clearPreview();
     search.setQuery(nextQuery);
@@ -80,11 +102,13 @@ export function SoundSearchPage() {
   }
 
   function handlePrevious() {
+    preservePaginationLayout();
     clearPreview();
     search.goToPreviousPage();
   }
 
   function handleNext() {
+    preservePaginationLayout();
     clearPreview();
     search.goToNextPage();
   }
@@ -117,7 +141,13 @@ export function SoundSearchPage() {
 
       <MotionConfig reducedMotion="user">
         <LayoutGroup id="sound-selection">
-          <div className="grid min-w-0 items-start gap-3 min-[420px]:gap-4 min-[600px]:gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.85fr)_minmax(14rem,0.6fr)]">
+          <div
+            className="grid min-w-0 items-start gap-3 min-[420px]:gap-4 min-[600px]:gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.85fr)_minmax(14rem,0.6fr)]"
+            ref={pageLayoutRef}
+            style={{
+              minHeight: paginationLayoutMinHeight ?? undefined,
+            }}
+          >
             <section
               aria-labelledby="search-heading"
               className="min-w-0 rounded-2xl border border-white/10 bg-surface-raised/90 p-3 shadow-2xl shadow-black/20 backdrop-blur min-[420px]:rounded-3xl min-[420px]:p-5 min-[600px]:p-6"
@@ -199,6 +229,7 @@ export function SoundSearchPage() {
               <SoundPreview
                 isPlayerMounted={isPlayerMounted}
                 onRequestPlayer={handleRequestPlayer}
+                shouldCenterArtwork={window.innerWidth < DESKTOP_BREAKPOINT_PX}
                 shouldReduceMotion={shouldReduceMotion}
                 sound={selectedSound}
               />

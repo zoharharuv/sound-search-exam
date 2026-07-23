@@ -5,6 +5,7 @@ import type { Sound } from "@/domain/sound";
 export interface SoundPreviewProps {
   readonly sound: Sound | null;
   readonly isPlayerMounted: boolean;
+  readonly shouldCenterArtwork: boolean;
   readonly shouldReduceMotion: boolean;
   onRequestPlayer(): void;
 }
@@ -14,6 +15,7 @@ const PLAYER_ID = "selected-sound-player";
 export function SoundPreview({
   sound,
   isPlayerMounted,
+  shouldCenterArtwork,
   shouldReduceMotion,
   onRequestPlayer,
 }: SoundPreviewProps) {
@@ -23,7 +25,15 @@ export function SoundPreview({
 
   useEffect(() => {
     if (!sound) return;
-    artworkButtonRef.current?.focus({ preventScroll: true });
+
+    const artworkButton = artworkButtonRef.current;
+    artworkButton?.focus({ preventScroll: true });
+    if (artworkButton && shouldCenterArtwork) {
+      artworkButton.scrollIntoView({
+        behavior: shouldReduceMotion ? "auto" : "smooth",
+        block: "center",
+      });
+    }
   }, [sound]);
 
   return (

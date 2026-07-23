@@ -81,11 +81,16 @@ function renderApp(storage: KeyValueStorage | null = null) {
 
 describe("App", () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
     providerMocks.search.mockReset();
     window.localStorage.clear();
     Object.defineProperty(window, "innerWidth", {
       configurable: true,
       value: DESKTOP_BREAKPOINT_PX,
+    });
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+      configurable: true,
+      value: vi.fn(),
     });
   });
 
@@ -302,6 +307,9 @@ describe("App", () => {
     );
     const user = userEvent.setup();
     const { queryClient } = renderApp();
+    const scrollTo = vi
+      .spyOn(window, "scrollTo")
+      .mockImplementation(() => undefined);
 
     fireEvent.change(screen.getByRole("searchbox", { name: "Search sounds" }), {
       target: { value: "Pages" },
@@ -312,13 +320,20 @@ describe("App", () => {
       screen.getByRole("button", { name: "Load player for Page one" }),
     ).toHaveFocus();
 
-    await user.click(screen.getByRole("button", { name: "Next" }));
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 375,
+    });
+    const nextButton = screen.getByRole("button", { name: "Next" });
+    await user.click(nextButton);
     expect(
       screen.getByText("Select a sound to preview it"),
     ).toBeInTheDocument();
     expect(
       await screen.findByRole("button", { name: "Page two" }),
     ).toBeInTheDocument();
+    expect(scrollTo).not.toHaveBeenCalled();
+    expect(nextButton).toHaveFocus();
 
     await user.click(screen.getByRole("button", { name: "Page two" }));
     expect(
@@ -342,6 +357,19 @@ describe("App", () => {
     expect(
       screen.getByRole("button", { name: "Page two" }),
     ).toBeInTheDocument();
+
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: DESKTOP_BREAKPOINT_PX,
+    });
+    const previousButton = screen.getByRole("button", { name: "Previous" });
+    await user.click(previousButton);
+
+    expect(
+      await screen.findByRole("button", { name: "Page one" }),
+    ).toBeInTheDocument();
+    expect(scrollTo).not.toHaveBeenCalled();
+    expect(previousButton).toHaveFocus();
   });
 
   it("hydrates and persists the real List and Tile result layouts", async () => {
