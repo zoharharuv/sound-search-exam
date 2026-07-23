@@ -162,10 +162,17 @@ transforms.
 
 ### Search Availability Note
 
-During QA tests on 23 July 2026, Mixcloud's public REST search endpoint and
-Mixcloud's own web-search request returned empty result sets for multiple common
-queries across independent networks. Profile cloudcast endpoints still returned
-data.
+During QA on 23 July 2026, Mixcloud's public REST search endpoint
+temporarily returned empty result sets for several common queries, while
+profile cloudcast endpoints still returned data. The behavior was reproduced
+outside the application, so it was treated as an external service issue rather
+than a client-side failure.
 
-The application handles this as a normal empty-result state; no mock data,
-unrelated fallback results, or undocumented API integration is used.
+The endpoint was tested again later the same day and search results were
+available again. The application therefore continues to use Mixcloud as its
+active provider.
+
+The UI handles an empty provider response as a normal empty-result state, and
+it provides visible error and retry states for request failures. The provider
+boundary also allows replacing Mixcloud through a new adapter and a
+composition-root change if availability becomes persistently unreliable.
