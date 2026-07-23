@@ -9,7 +9,7 @@
 3. Added persisted recent searches and List/Tile preference.
 4. Added selected-sound preview, lazy embedded player, accessibility behavior,
    reduced-motion support, and focused component/integration tests.
-5. Completed browser QA, documentation, production build verification, and deployment.
+5. Completed documentation and automated verification. Manual Chrome QA and deployment are final delivery steps.
 
 ## Key decisions
 
