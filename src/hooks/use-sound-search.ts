@@ -46,7 +46,6 @@ interface PendingSearchHistory {
 interface PendingNavigation extends PaginationTransition {
   readonly query: string;
   readonly queryKey: SoundSearchQueryKey;
-  readonly baselineDataUpdateCount: number;
 }
 
 export interface UseSoundSearchResult {
@@ -235,10 +234,7 @@ export function useSoundSearch(
           (part, index) => part === queryKey[index],
         );
 
-      if (
-        !isCurrentTransition ||
-        currentDataUpdateCount <= pendingNavigation.baselineDataUpdateCount
-      ) {
+      if (!isCurrentTransition) {
         return;
       }
 
@@ -341,10 +337,6 @@ export function useSoundSearch(
         fromCursor: pagination.currentCursor,
         targetCursor,
         queryKey: transitionQueryKey,
-        baselineDataUpdateCount: getDataUpdateCount(
-          queryClient,
-          transitionQueryKey,
-        ),
       };
 
       requestedCursorRef.current = targetCursor;
