@@ -18,6 +18,8 @@ export function SoundPreview({
   onRequestPlayer,
 }: SoundPreviewProps) {
   const artworkButtonRef = useRef<HTMLButtonElement>(null);
+  const embedUrl = sound?.embedUrl ?? null;
+  const hasEmbedUrl = embedUrl !== null;
 
   useEffect(() => {
     if (!sound) return;
@@ -28,7 +30,11 @@ export function SoundPreview({
     <div className="mt-5">
       <p aria-live="polite" className="sr-only">
         {sound
-          ? `${sound.title} selected. Activate the artwork to load its player.`
+          ? `${sound.title} selected. ${
+              hasEmbedUrl
+                ? "Activate the artwork to load its player."
+                : "Playback unavailable."
+            }`
           : ""}
       </p>
 
@@ -43,21 +49,19 @@ export function SoundPreview({
             transition={{ duration: shouldReduceMotion ? 0 : 0.24 }}
           >
             <button
-              aria-controls={sound.embedUrl === null ? undefined : PLAYER_ID}
-              aria-expanded={
-                sound.embedUrl === null ? undefined : isPlayerMounted
-              }
-              aria-disabled={sound.embedUrl === null}
+              aria-controls={hasEmbedUrl ? PLAYER_ID : undefined}
+              aria-expanded={hasEmbedUrl ? isPlayerMounted : undefined}
+              aria-disabled={!hasEmbedUrl}
               aria-label={
-                sound.embedUrl === null
-                  ? `Playback unavailable for ${sound.title}`
-                  : isPlayerMounted
+                hasEmbedUrl
+                  ? isPlayerMounted
                     ? `Player loaded for ${sound.title}`
                     : `Load player for ${sound.title}`
+                  : `Playback unavailable for ${sound.title}`
               }
               className="group w-full max-w-sm rounded-3xl text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent/50"
               onClick={() => {
-                if (sound.embedUrl !== null && !isPlayerMounted) {
+                if (hasEmbedUrl && !isPlayerMounted) {
                   onRequestPlayer();
                 }
               }}
@@ -88,7 +92,7 @@ export function SoundPreview({
                     ♪
                   </span>
                 )}
-                {sound.embedUrl !== null ? (
+                {hasEmbedUrl ? (
                   <span className="absolute inset-x-4 bottom-4 rounded-full bg-slate-950/80 px-4 py-2 text-center text-sm font-semibold text-white backdrop-blur transition group-hover:bg-accent/90">
                     {isPlayerMounted ? "Player loaded" : "Load player"}
                   </span>
@@ -99,15 +103,15 @@ export function SoundPreview({
             <h3 className="mt-5 text-center text-lg font-semibold text-white">
               {sound.title}
             </h3>
-            {sound.embedUrl === null ? (
-              <p className="mt-2 text-center text-sm text-amber-300">
-                Playback unavailable
-              </p>
-            ) : (
+            {hasEmbedUrl ? (
               <p className="mt-2 text-center text-sm leading-6 text-slate-400">
                 {isPlayerMounted
                   ? "Player loaded below. Use its Play control if autoplay is blocked."
                   : "Activate the artwork to load the player."}
+              </p>
+            ) : (
+              <p className="mt-2 text-center text-sm text-amber-300">
+                Playback unavailable
               </p>
             )}
           </motion.div>
@@ -133,7 +137,7 @@ export function SoundPreview({
         )}
       </AnimatePresence>
 
-      {sound !== null && sound.embedUrl !== null && isPlayerMounted ? (
+      {sound !== null && hasEmbedUrl && isPlayerMounted ? (
         <motion.div
           animate={{ opacity: 1, y: 0 }}
           className="mt-6 overflow-hidden rounded-2xl border border-surface-border bg-white shadow-xl shadow-black/20"
@@ -145,7 +149,7 @@ export function SoundPreview({
           <iframe
             allow="autoplay"
             className="block h-32 w-full border-0"
-            src={sound.embedUrl}
+            src={embedUrl}
             title={`Player for ${sound.title}`}
           />
         </motion.div>

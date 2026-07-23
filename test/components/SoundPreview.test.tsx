@@ -78,6 +78,11 @@ describe("SoundPreview", () => {
     });
     expect(unavailableArtwork).toHaveAttribute("aria-disabled", "true");
     expect(unavailableArtwork).toHaveFocus();
+    expect(
+      screen.getByText(
+        "Unavailable Session selected. Playback unavailable.",
+      ),
+    ).toBeInTheDocument();
     await user.click(unavailableArtwork);
     expect(onRequestPlayer).not.toHaveBeenCalled();
     expect(screen.getByText("Playback unavailable")).toBeInTheDocument();
