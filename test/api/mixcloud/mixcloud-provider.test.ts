@@ -97,12 +97,12 @@ describe("MixcloudSoundProvider", () => {
     expect(get).not.toHaveBeenCalled();
   });
 
-  it("caps results at six and tolerates absent paging and artwork", async () => {
+  it("honors the requested page size and tolerates absent paging and artwork", async () => {
     const client = createClientMock();
     const get = vi.mocked(client.get);
     get.mockResolvedValue({
       data: {
-        data: Array.from({ length: 7 }, (_, index) => ({
+        data: Array.from({ length: 3 }, (_, index) => ({
           key: `/dj/mix-${index}/`,
           name: `Mix ${index}`,
           url: `https://www.mixcloud.com/dj/mix-${index}/`,
@@ -110,14 +110,25 @@ describe("MixcloudSoundProvider", () => {
       },
     });
     const provider = new MixcloudSoundProvider(client);
-
-    const result = await provider.search({
+    const input = {
       query: "mix",
       cursor: null,
       pageSize: MAX_SEARCH_PAGE_SIZE,
-    });
+    } as const;
+    const requestedPageSize = 2;
+    Object.defineProperty(input, "pageSize", { value: requestedPageSize });
 
-    expect(result.items).toHaveLength(6);
+    const result = await provider.search(input);
+
+    expect(get).toHaveBeenCalledWith("/search/", {
+      params: {
+        q: "mix",
+        type: "cloudcast",
+        limit: requestedPageSize,
+      },
+      signal: undefined,
+    });
+    expect(result.items).toHaveLength(requestedPageSize);
     expect(result.items[0]?.artworkUrl).toBeNull();
     expect(result.nextCursor).toBeNull();
   });

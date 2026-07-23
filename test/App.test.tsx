@@ -14,6 +14,7 @@ import type { SoundSearchResult } from "@/api/sound-provider";
 import type { Sound } from "@/domain/sound";
 import type { KeyValueStorage } from "@/storage/search-history-storage";
 import { createAppStore } from "@/store/store";
+import { DESKTOP_BREAKPOINT_PX } from "@/styles/responsive-breakpoints";
 
 const providerMocks = vi.hoisted(() => ({ search: vi.fn() }));
 
@@ -84,7 +85,7 @@ describe("App", () => {
     window.localStorage.clear();
     Object.defineProperty(window, "innerWidth", {
       configurable: true,
-      value: 1024,
+      value: DESKTOP_BREAKPOINT_PX,
     });
   });
 
@@ -162,7 +163,7 @@ describe("App", () => {
 
     Object.defineProperty(window, "innerWidth", {
       configurable: true,
-      value: 1024,
+      value: DESKTOP_BREAKPOINT_PX,
     });
     await user.click(recentButton);
 

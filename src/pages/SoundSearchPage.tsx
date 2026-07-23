@@ -6,10 +6,12 @@ import { SearchBar } from "@/components/SearchBar";
 import { SearchResults } from "@/components/SearchResults";
 import { SoundPreview } from "@/components/SoundPreview";
 import { ViewModeToggle } from "@/components/ViewModeToggle";
+import { MAX_RECENT_SEARCHES } from "@/domain/search-history";
 import type { Sound } from "@/domain/sound";
 import { useSoundSearch } from "@/hooks/use-sound-search";
 import type { AppDispatch, RootState } from "@/store/store";
 import { viewModeChanged } from "@/store/view-mode-slice";
+import { DESKTOP_BREAKPOINT_PX } from "@/styles/responsive-breakpoints";
 
 export function SoundSearchPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -64,7 +66,7 @@ export function SoundSearchPage() {
     clearPreview();
     search.searchRecent(recentQuery);
 
-    if (window.innerWidth < 1024) {
+    if (window.innerWidth < DESKTOP_BREAKPOINT_PX) {
       window.scrollTo({
         top: 0,
         behavior: shouldReduceMotion ? "auto" : "smooth",
@@ -213,7 +215,7 @@ export function SoundSearchPage() {
                 Recent searches
               </h2>
               <p className="mt-1 text-sm text-slate-400">
-                Your five latest successful searches.
+                Your {MAX_RECENT_SEARCHES} latest successful searches.
               </p>
               {recentSearches.length === 0 ? (
                 <p className="mt-5 rounded-xl border border-dashed border-surface-border px-3 py-5 text-center text-sm text-slate-500">
