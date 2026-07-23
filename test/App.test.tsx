@@ -1,10 +1,18 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Provider } from "react-redux";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "@/App";
 import type { SoundSearchResult } from "@/api/sound-provider";
+import type { Sound } from "@/domain/sound";
+import type { KeyValueStorage } from "@/storage/search-history-storage";
 import { createAppStore } from "@/store/store";
 
 const providerMocks = vi.hoisted(() => ({ search: vi.fn() }));
@@ -16,26 +24,46 @@ vi.mock("@/api/provider", () => ({
   },
 }));
 
-function result(title: string): SoundSearchResult {
+vi.mock("framer-motion", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("framer-motion")>();
+  return { ...actual, useReducedMotion: () => true };
+});
+
+interface SoundOptions {
+  readonly artworkUrl?: string | null;
+  readonly embedUrl?: string | null;
+}
+
+function sound(title: string, options: SoundOptions = {}): Sound {
+  const slug = title.toLowerCase().replace(/\s+/g, "-");
   return {
-    items: [
-      {
-        id: `/${title}/`,
-        title,
-        url: "https://sounds.test/result/",
-        artworkUrl: null,
-        embedUrl: "https://player.test/result/",
-      },
-    ],
-    nextCursor: null,
+    id: `/${slug}/`,
+    title,
+    url: `https://sounds.test/${slug}/`,
+    artworkUrl: options.artworkUrl ?? null,
+    embedUrl:
+      options.embedUrl === undefined
+        ? `https://player.test/${slug}/?autoplay=1`
+        : options.embedUrl,
   };
 }
 
-function renderApp() {
+function result(
+  title: string,
+  options: SoundOptions = {},
+  nextCursor: string | null = null,
+): SoundSearchResult {
+  return {
+    items: [sound(title, options)],
+    nextCursor,
+  };
+}
+
+function renderApp(storage: KeyValueStorage | null = null) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const store = createAppStore(null);
+  const store = createAppStore(storage);
 
   return {
     store,
@@ -53,6 +81,7 @@ function renderApp() {
 describe("App", () => {
   beforeEach(() => {
     providerMocks.search.mockReset();
+    window.localStorage.clear();
   });
 
   it("renders the Day 1 search page shell", () => {
@@ -120,5 +149,223 @@ describe("App", () => {
 
     expect(await screen.findByText("Recovered result")).toBeInTheDocument();
     expect(providerMocks.search).toHaveBeenCalledTimes(2);
+  });
+
+  it("selects exact results, transfers focus, mounts the player only from artwork, and restores the old source", async () => {
+    providerMocks.search.mockResolvedValue({
+      items: [sound("First result"), sound("Second result")],
+      nextCursor: null,
+    });
+    const user = userEvent.setup();
+    renderApp();
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search sounds" }), {
+      target: { value: "Ambient" },
+    });
+    await user.click(screen.getByRole("button", { name: "Go" }));
+
+    const firstResult = await screen.findByRole("button", {
+      name: "First result",
+    });
+    await user.click(firstResult);
+
+    const firstArtwork = await screen.findByRole("button", {
+      name: "Load player for First result",
+    });
+    expect(firstArtwork).toHaveFocus();
+    expect(
+      screen.queryByRole("button", { name: "First result" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTitle("Player for First result"),
+    ).not.toBeInTheDocument();
+
+    await user.click(firstArtwork);
+    const firstPlayer = screen.getByTitle("Player for First result");
+    expect(firstPlayer).toHaveAttribute(
+      "src",
+      "https://player.test/first-result/?autoplay=1",
+    );
+    expect(firstPlayer).toHaveAttribute("allow", "autoplay");
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Player loaded for First result",
+      }),
+    );
+    expect(screen.getByTitle("Player for First result")).toBe(firstPlayer);
+
+    await user.click(screen.getByRole("button", { name: "Second result" }));
+    expect(
+      await screen.findByRole("button", {
+        name: "First result",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Second result" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Load player for Second result",
+      }),
+    ).toHaveFocus();
+    expect(
+      screen.queryByTitle("Player for First result"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("clears preview state on input changes without clearing displayed results", async () => {
+    providerMocks.search.mockResolvedValue(result("Ambient result"));
+    const user = userEvent.setup();
+    renderApp();
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search sounds" }), {
+      target: { value: "Ambient" },
+    });
+    await user.click(screen.getByRole("button", { name: "Go" }));
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Ambient result",
+      }),
+    );
+    await user.click(
+      screen.getByRole("button", {
+        name: "Load player for Ambient result",
+      }),
+    );
+    expect(screen.getByTitle("Player for Ambient result")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search sounds" }), {
+      target: { value: "Ambient edit" },
+    });
+
+    expect(
+      screen.getByText("Select a sound to preview it"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTitle("Player for Ambient result"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Ambient result" }),
+    ).toBeInTheDocument();
+  });
+
+  it("clears selection for page transitions and replaced result identities", async () => {
+    providerMocks.search.mockImplementation(
+      ({ cursor }: { cursor: string | null }) =>
+        Promise.resolve(
+          cursor === null
+            ? result("Page one", {}, "cursor-2")
+            : result("Page two"),
+        ),
+    );
+    const user = userEvent.setup();
+    const { queryClient } = renderApp();
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search sounds" }), {
+      target: { value: "Pages" },
+    });
+    await user.click(screen.getByRole("button", { name: "Go" }));
+    await user.click(await screen.findByRole("button", { name: "Page one" }));
+    expect(
+      screen.getByRole("button", { name: "Load player for Page one" }),
+    ).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    expect(
+      screen.getByText("Select a sound to preview it"),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "Page two" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Page two" }));
+    expect(
+      screen.getByRole("button", { name: "Load player for Page two" }),
+    ).toHaveFocus();
+
+    act(() => {
+      queryClient.setQueryData(
+        ["sound-search", "test-provider", "Pages", "cursor-2"],
+        result("Page two", {
+          artworkUrl: "https://images.test/replaced-page-two.jpg",
+        }),
+      );
+    });
+
+    await waitFor(() =>
+      expect(
+        screen.getByText("Select a sound to preview it"),
+      ).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("button", { name: "Page two" }),
+    ).toBeInTheDocument();
+  });
+
+  it("hydrates and persists the real List and Tile result layouts", async () => {
+    window.localStorage.setItem(
+      "sound-search:preferences",
+      JSON.stringify({ viewMode: "tile" }),
+    );
+    providerMocks.search.mockResolvedValue(
+      result("Tile result", {
+        artworkUrl: "https://images.test/tile-result.jpg",
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp(window.localStorage);
+
+    expect(screen.getByRole("button", { name: "Tile" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search sounds" }), {
+      target: { value: "Tiles" },
+    });
+    await user.click(screen.getByRole("button", { name: "Go" }));
+    expect(
+      await screen.findByRole("button", { name: "Select Tile result" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "List" }));
+    expect(screen.getByRole("button", { name: "List" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(
+      screen.getByRole("button", { name: "Tile result" }),
+    ).toBeInTheDocument();
+    expect(
+      JSON.parse(
+        window.localStorage.getItem("sound-search:preferences") ?? "{}",
+      ),
+    ).toEqual({ viewMode: "list" });
+  });
+
+  it("shows missing artwork and embed fallbacks without mounting a player", async () => {
+    providerMocks.search.mockResolvedValue(
+      result("Unavailable result", { artworkUrl: null, embedUrl: null }),
+    );
+    const user = userEvent.setup();
+    renderApp();
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search sounds" }), {
+      target: { value: "Unavailable" },
+    });
+    await user.click(screen.getByRole("button", { name: "Go" }));
+    await user.click(
+      await screen.findByRole("button", {
+        name: "Unavailable result",
+      }),
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: "Playback unavailable for Unavailable result",
+      }),
+    ).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText("Playback unavailable")).toBeInTheDocument();
+    expect(screen.queryByTitle(/Player for/)).not.toBeInTheDocument();
   });
 });
