@@ -1,8 +1,7 @@
-# Sound Search Exam
+# Sound Search
 
 A responsive React + TypeScript single-page application for searching, paging
-through, selecting, and playing sounds. Mixcloud is the initial provider, but its
-payloads, paging URLs, and widget construction stay isolated from UI and client state.
+through, selecting, and playing sounds. Mixcloud is the active provider, while its payloads, paging URLs, and widget construction remain isolated from the UI and client state.
 
 ## Live Demo
 
