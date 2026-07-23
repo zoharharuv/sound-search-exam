@@ -1,212 +1,53 @@
 # Sound Search Exam
 
-A React and TypeScript single-page application for searching, paging through,
-selecting, and playing sounds. Mixcloud is the first provider target, while the
-application boundary is designed so another provider can replace it without
-changing UI components or client-state logic.
+A responsive React + TypeScript single-page application for searching, paging
+through, selecting, and playing sounds. Mixcloud is the initial provider, but its
+payloads, paging URLs, and widget construction stay isolated from UI and client state.
 
-The repository is currently at **Milestone 1: Application Foundation**. The
-provider contracts, client state, persistence adapters, domain logic, semantic
-page shell, and foundation tests are present. Live Mixcloud search, debouncing,
-result rendering, animation, and playback belong to later milestones and are
-not implemented yet.
+## Features
 
-## Requirements
+- Debounced search with immediate Go/Enter submission and up to six results.
+- Provider-cursor Previous/Next navigation with loading, empty, error, and Retry states.
+- Five deduplicated recent searches persisted in localStorage.
+- Keyboard-accessible selection with Framer Motion artwork travel/fade.
+- Focus transfer to the selected artwork and a `prefers-reduced-motion` fallback.
+- Persisted compact List and responsive artwork Tile layouts.
+- Player iframe mounted only after explicit selected-artwork activation.
+- Responsive three-panel desktop layout that stacks on smaller screens.
 
-- Node.js 18 or newer
-- npm
-- Latest stable Chrome for browser testing
+## Setup and Commands
 
-## Setup and Scripts
+Requirements: Node.js 18+, npm, and latest stable Chrome for browser verification.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Vite prints the local development URL after startup.
+| Command              | Purpose                       |
+| -------------------- | ----------------------------- |
+| `npm run dev`        | Start Vite development mode   |
+| `npm run build`      | Type-check and create `dist/` |
+| `npm run preview`    | Serve the production build    |
+| `npm run lint`       | Run TypeScript validation     |
+| `npm test`           | Run Vitest once               |
+| `npm run test:watch` | Run Vitest in watch mode      |
+| `npm run test:ui`    | Open the Vitest UI            |
 
-| Command              | Purpose                                                 |
-| -------------------- | ------------------------------------------------------- |
-| `npm run dev`        | Start the Vite development server                       |
-| `npm run build`      | Type-check and create a production build in `dist/`     |
-| `npm run preview`    | Serve the production build locally                      |
-| `npm run lint`       | Run strict TypeScript validation without emitting files |
-| `npm test`           | Run the Vitest suite once                               |
-| `npm run test:watch` | Run Vitest in watch mode                                |
-| `npm run test:ui`    | Open the Vitest UI                                      |
+## Architecture and Provider Boundary
 
-## Runtime Composition
+- `src/api/`: provider contract, shared Axios client, composition, and Mixcloud adapter.
+- `src/domain/`: provider-neutral types and pure history/pagination logic.
+- `src/storage/`: the only localStorage access.
+- `src/store/`: Redux client state and persistence wiring.
+- `src/hooks/`: React Query and Redux orchestration for UI actions.
+- `src/components/`: reusable provider-neutral presentation.
+- `src/pages/`: page composition and transient selection/player coordination.
+- `test/`: unit and focused UI tests mirroring source responsibilities.
 
-The application starts at `src/main.tsx` and composes inward as follows:
-
-```text
-index.html
-└─ #root
-   └─ src/main.tsx
-      ├─ imports src/index.css
-      └─ React.StrictMode
-         └─ React Redux Provider
-            ├─ store: src/store/store.ts
-            └─ TanStack QueryClientProvider
-               ├─ queryClient: server/API state cache
-               └─ src/App.tsx
-                  └─ src/pages/SoundSearchPage.tsx
-                     ├─ local React state: current input text
-                     ├─ Redux: recent-search history
-                     ├─ Redux: pagination cursor history
-                     ├─ Redux: list/tile preference
-                     ├─ search form shell
-                     ├─ results and paging shell
-                     ├─ selected-track preview shell
-                     └─ recent-search shell
-```
-
-`main.tsx` owns application-wide providers. `App.tsx` is deliberately small:
-it selects the top-level page without containing page behavior. Page composition
-belongs in `src/pages/`; reusable presentational components will belong in
-`src/components/`; UI-facing server/client-state orchestration will belong in
-`src/hooks/`.
-
-## Module Dependency Tree
-
-```text
-src/main.tsx
-├─ src/index.css
-├─ src/store/store.ts
-│  ├─ src/store/recent-searches-slice.ts
-│  │  └─ src/domain/search-history.ts
-│  ├─ src/store/pagination-slice.ts
-│  │  └─ src/domain/pagination.ts
-│  ├─ src/store/view-mode-slice.ts
-│  │  └─ src/storage/preferences-storage.ts (ViewMode type)
-│  ├─ src/storage/search-history-storage.ts
-│  │  └─ src/domain/search-history.ts
-│  └─ src/storage/preferences-storage.ts
-└─ src/App.tsx
-   └─ src/pages/SoundSearchPage.tsx
-      ├─ src/store/store.ts (RootState and AppDispatch types)
-      ├─ src/store/recent-searches-slice.ts
-      ├─ src/store/pagination-slice.ts
-      └─ src/store/view-mode-slice.ts
-
-Provider/data boundary (created now, connected in Milestone 2):
-
-src/api/sound-provider.ts
-├─ src/domain/sound.ts
-└─ src/domain/pagination.ts (opaque Cursor type)
-
-src/api/mixcloud/mixcloud-http-client.ts
-└─ src/api/http-client.ts
-   └─ Axios
-```
-
-Dependencies point inward toward provider-independent domain contracts. Domain
-logic does not import React, Redux, Axios, browser storage, or Mixcloud types.
-The UI does not import Mixcloud types or issue HTTP requests.
-
-## Current Milestone 1 Flow
-
-### Application startup
-
-1. `main.tsx` creates one TanStack `QueryClient` and imports the configured
-   Redux store.
-2. `createAppStore()` reads recent searches and the view preference through
-   storage adapters.
-3. The Redux `Provider` exposes client state, and `QueryClientProvider` exposes
-   the server-state cache.
-4. `App` renders `SoundSearchPage`.
-5. The page selects recent searches, cursor state, and view mode from Redux.
-
-### Current page-shell interactions
-
-- Typing changes local component state only.
-- Submitting the current foundation form dispatches `searchRecorded`.
-- List and Tile buttons dispatch `viewModeChanged`.
-- Previous and Next buttons dispatch cursor-history reducers when enabled.
-- Clicking a recent term currently copies it into the input.
-- The store subscription persists recent-search and view-mode state through
-  storage adapters.
-
-These interactions are foundation wiring, not the completed search flow. In
-particular, history recording will move to the successful active-query path,
-and recent-search clicks will initiate an immediate search in later milestones.
-
-## Target Search Flow
-
-Milestone 2 will connect the page to the provider through an orchestration hook:
-
-```text
-User input / Go / Enter / recent-search click / Retry
-└─ UI orchestration hook
-   ├─ normalize and validate query
-   ├─ choose active opaque cursor
-   └─ TanStack React Query
-      └─ SoundProvider.search({ query, cursor, pageSize: 6, signal })
-         └─ Mixcloud adapter
-            ├─ shared Axios client
-            ├─ Mixcloud request/response types
-            └─ map provider payload
-               └─ SoundSearchResult { items, nextCursor }
-```
-
-The intended event behavior is:
-
-- Input changes trigger a debounced search after 300 ms.
-- Go and Enter trigger an immediate search.
-- A recent-search click triggers an immediate search from page one.
-- Retry repeats the exact active query and cursor.
-- Queries are trimmed; an empty query clears results and pagination without an
-  API request.
-- A history entry is written only after a successful response for the current
-  active query. Failed, cancelled, stale, and empty searches do not affect it.
-- Every page requests at most six results.
-- Cursor history changes only after a page transition succeeds. Navigation is
-  disabled as appropriate while its transition is pending.
-
-TanStack React Query owns request lifecycle, cached pages, loading, errors,
-retry, cancellation, and stale-response isolation. Redux owns recent searches,
-cursor navigation history, view preference, and UI coordination state. Fetched
-result arrays are never duplicated in Redux.
-
-## State and Persistence
-
-### Redux client state
-
-```text
-RootState
-├─ recentSearches
-│  └─ items: readonly string[] (maximum five)
-├─ pagination
-│  ├─ currentCursor: Cursor | null
-│  ├─ previousCursors: readonly (Cursor | null)[]
-│  └─ nextCursor: Cursor | null
-└─ viewMode
-   └─ value: "list" | "tile"
-```
-
-Cursor values are opaque. No component or domain function parses a provider
-URL or token. `previousCursors` is the authoritative Previous strategy and
-stores the cursors required to revisit already traversed pages.
-
-### localStorage
-
-Only `src/storage/` accesses `localStorage`:
-
-- `search-history-storage.ts` reads and writes at most five string entries.
-- `preferences-storage.ts` validates and persists the List/Tile preference.
-- Missing, malformed, inaccessible, or full storage falls back safely and does
-  not break rendering.
-- `KeyValueStorage` allows the same adapters to be tested without coupling
-  domain or Redux code to the browser implementation.
-
-Search normalization trims surrounding whitespace, collapses repeated internal
-whitespace, compares duplicates case-insensitively, and preserves the display
-casing of the newest successful query. A duplicate moves to the front.
-
-## API and Provider Boundary
-
-`SoundProvider` is the replaceable data-layer seam:
+Application providers are composed in `main.tsx`. `SoundSearchPage` combines the
+search/results, preview/player, and recent-search panels. Components receive
+provider-neutral `Sound` values and callbacks, not Mixcloud types or HTTP access.
 
 ```ts
 interface SoundProvider {
@@ -215,73 +56,84 @@ interface SoundProvider {
 }
 ```
 
-`SoundSearchInput`, `SoundSearchResult`, `Sound`, and `Cursor` are
-provider-neutral. The Mixcloud adapter must own Mixcloud payload types, endpoint
-details, paging URLs/tokens, and response mapping. Provider paging values may
-cross the boundary only as opaque `Cursor` strings.
+The Mixcloud adapter maps native responses to `Sound`, validates and preserves
+paging URLs as opaque cursors, and derives `Sound.embedUrl`. The UI uses that URL
+unchanged. Replacing Mixcloud requires a new provider and composition-root change,
+not changes to UI, domain logic, Redux, or cursor history.
 
-The shared Axios client owns base transport configuration, common request
-headers, and conversion of Axios failures into `ApiRequestError`. Provider
-adapters must use this client and propagate the supplied `AbortSignal`.
+The shared Axios client owns JSON headers, timeout behavior, normalized transport
+errors, and cancellation mapping. Provider requests receive React Query's
+`AbortSignal`.
 
-Replacing Mixcloud should require a new `SoundProvider` implementation and
-composition-root selection only. UI components, domain logic, Redux slices,
-and pagination behavior should remain unchanged.
+## State Ownership
 
-Mixcloud browser CORS behavior and real widget autoplay behavior must be
-verified before implementation assumptions are made. This project will not add
-a Vite proxy, backend, dependency, or other CORS workaround without an explicit
-architecture decision.
+| Owner             | State                                                                      |
+| ----------------- | -------------------------------------------------------------------------- |
+| React Query       | Fetched pages, loading/errors, retry, cache, cancellation, stale isolation |
+| Redux Toolkit     | Recent searches, opaque cursor history, List/Tile preference               |
+| `SoundSearchPage` | Selected `Sound` and whether its iframe is mounted                         |
+| Storage adapters  | Validated localStorage reads/writes for history and view preference        |
 
-## Planned Layout
+Fetched results are never copied into Redux. Transient selection/player state
+clears on input changes, searches, Retry, paging, empty input, and result identity
+replacement; an input edit does not alter the currently displayed results.
 
-The desktop experience will use three panels:
+Recent searches are recorded only after a successful current first-page response.
+Storage failures and malformed persisted values fall back safely.
 
-1. Search input, results, and bottom controls: Previous, Next, List, Tile.
-2. Selected artwork and embedded player.
-3. Recent searches.
+## Async and Cursor Safety
 
-The final layout will remain responsive and use semantic HTML, keyboard
-navigation, appropriate ARIA, and focus management when selection moves artwork
-to the preview panel.
+- Input is normalized and searched after about 300ms; Go, Enter, and recent
+  searches execute immediately.
+- Empty normalized input cancels work and resets search/pagination without a request.
+- Query keys include provider ID, normalized query, and opaque cursor.
+- Superseded work is cancelled and its signal reaches Axios.
+- Query-key isolation prevents stale responses replacing the active query/page.
+- Navigation locks reject rapid duplicate Previous/Next actions.
+- Cursor history changes only after the matching transition succeeds, so failed,
+  duplicate, or out-of-order completions cannot corrupt it.
+
+## Selection and Player Behavior
+
+Results are semantic buttons supporting click, Enter, and Space. Framer Motion
+uses `LayoutGroup`, `AnimatePresence`, and matching `layoutId` values to move the
+selected artwork while removing only its source. A new selection restores the
+previous source. Destination focus uses `preventScroll: true`; reduced-motion
+users get an immediate transition with the same keyboard behavior.
+
+The selected artwork is the only control that mounts the iframe. It uses
+`Sound.embedUrl` unchanged, a provider-neutral title, and `allow="autoplay"`.
+Repeated activation is idempotent. A null embed URL shows "Playback unavailable"
+and mounts no iframe.
 
 ## Testing
 
-All tests live under root-level `test/` and mirror source responsibilities:
+The current Vitest suite contains 38 tests across nine files using React Testing
+Library, user-event, and jsdom. Coverage includes:
 
-```text
-test/
-├─ App.test.tsx
-├─ setup.ts
-├─ domain/
-│  ├─ pagination.test.ts
-│  └─ search-history.test.ts
-└─ storage/
-   └─ storage.test.ts
-```
+- history normalization/deduplication and storage validation;
+- cursor transitions, resets, and stale completion rejection;
+- Axios cancellation/error normalization and Mixcloud response mapping;
+- debounce, immediate search, stale isolation, history, and navigation locks;
+- List/Tile semantics, keyboard selection, focus transfer, media fallbacks,
+  lazy/idempotent player mounting, preview resets, and preference persistence.
 
-The current suite covers application-shell rendering, history normalization and
-maximum length, cursor transitions and reset, storage round trips, and malformed
-persisted data. Async search and focused interaction tests will be added with
-their corresponding milestones.
+UI tests assert behavior and accessibility rather than pixel-level animation transforms.
 
-## Current Trade-offs and Limitations
+## Mixcloud and Browser Limitations
 
-- The UI is a semantic shell and does not call the provider yet.
-- Search submission currently demonstrates Redux wiring; its final successful-
-  response history behavior is deferred to the search orchestration milestone.
-- Recent-search clicks populate the input but do not yet execute a search.
-- Cursor reducers exist, but network-success coordination and pending-navigation
-  guards are not connected yet.
-- List/Tile preference is persisted, but real result layouts are not present.
-- Selection animation and embedded playback are not implemented.
+- The adapter requests autoplay, but Chrome policy, iframe permissions, user
+  settings, or the widget can block audible playback. The visible player Play
+  control is the manual fallback.
+- The cross-origin iframe prevents the parent page from inspecting playback state
+  or reliably detecting internal widget failures.
+- Mixcloud may change its API, CORS policy, paging URL shape, or widget parameters.
+- Remote artwork may fail or load slowly; fixed aspect ratios and fallbacks avoid
+  making layout stability depend on image success.
 
-See `PLAN.md` for milestone scope, approved behavior decisions, and requirements
-traceability.
+## Manual Chrome Verification
 
-## Architecture
-
-![Sound Search architecture diagram](./docs/sound-search-architecture.png)
-
-The application separates provider-specific API code, pure domain logic,
-browser storage, client state, and UI composition.
+1. Verify real Mixcloud search, CORS behavior, cursor paging, and Retry states.
+2. Check mouse/keyboard selection, List/Tile motion, focus, and reduced motion.
+3. Confirm lazy iframe loading, autoplay request behavior, and manual Play fallback.
+4. Exercise preview resets, missing media, responsive layout, focus, and touch targets.
