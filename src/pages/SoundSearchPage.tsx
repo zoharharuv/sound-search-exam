@@ -63,6 +63,13 @@ export function SoundSearchPage() {
   function handleRecentSearch(recentQuery: string) {
     clearPreview();
     search.searchRecent(recentQuery);
+
+    if (window.innerWidth < 1024) {
+      window.scrollTo({
+        top: 0,
+        behavior: shouldReduceMotion ? "auto" : "smooth",
+      });
+    }
   }
 
   function handleRetry() {
@@ -179,7 +186,7 @@ export function SoundSearchPage() {
 
             <section
               aria-labelledby="preview-heading"
-              className="min-w-0 rounded-2xl border border-white/10 bg-surface-raised/90 p-3 shadow-2xl shadow-black/20 backdrop-blur min-[420px]:rounded-3xl min-[420px]:p-5 min-[600px]:p-6 lg:sticky lg:top-6"
+              className="min-w-0 rounded-2xl border border-white/10 bg-surface-raised/90 p-3 shadow-2xl shadow-black/20 backdrop-blur min-[420px]:rounded-3xl min-[420px]:p-5 min-[600px]:p-6"
             >
               <h2
                 className="text-xl font-semibold text-white"

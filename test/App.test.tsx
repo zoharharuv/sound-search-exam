@@ -82,6 +82,10 @@ describe("App", () => {
   beforeEach(() => {
     providerMocks.search.mockReset();
     window.localStorage.clear();
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 1024,
+    });
   });
 
   it("renders the Day 1 search page shell", () => {
@@ -128,6 +132,42 @@ describe("App", () => {
     await user.click(recentButton);
     await waitFor(() => expect(providerMocks.search).toHaveBeenCalledTimes(2));
     expect(await screen.findByText("Recent result")).toBeInTheDocument();
+  });
+
+  it("scrolls recent mobile searches without moving focus and does not scroll on desktop", async () => {
+    providerMocks.search.mockResolvedValue(result("Ambient result"));
+    const scrollTo = vi
+      .spyOn(window, "scrollTo")
+      .mockImplementation(() => undefined);
+    const user = userEvent.setup();
+    renderApp();
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search sounds" }), {
+      target: { value: "Ambient" },
+    });
+    await user.click(screen.getByRole("button", { name: "Go" }));
+    const recentButton = await screen.findByRole("button", {
+      name: "Ambient",
+    });
+
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 375,
+    });
+    await user.click(recentButton);
+
+    await waitFor(() => expect(providerMocks.search).toHaveBeenCalledTimes(2));
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "auto" });
+    expect(recentButton).toHaveFocus();
+
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 1024,
+    });
+    await user.click(recentButton);
+
+    await waitFor(() => expect(providerMocks.search).toHaveBeenCalledTimes(3));
+    expect(scrollTo).toHaveBeenCalledTimes(1);
   });
 
   it("shows a visible error and Retry repeats the active request", async () => {
