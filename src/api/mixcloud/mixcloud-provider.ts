@@ -1,7 +1,6 @@
 import type { AxiosInstance } from "axios";
 import { ApiRequestError } from "@/api/http-client";
 import {
-  MAX_SEARCH_PAGE_SIZE,
   type SoundProvider,
   type SoundSearchInput,
   type SoundSearchResult,
@@ -109,16 +108,14 @@ export class MixcloudSoundProvider implements SoundProvider {
           ? {
               q: input.query,
               type: "cloudcast",
-              limit: MAX_SEARCH_PAGE_SIZE,
+              limit: input.pageSize,
             }
           : undefined,
       signal: input.signal,
     });
 
     return {
-      items: response.data.data
-        .slice(0, MAX_SEARCH_PAGE_SIZE)
-        .map(mapCloudcast),
+      items: response.data.data.slice(0, input.pageSize).map(mapCloudcast),
       nextCursor: response.data.paging?.next ?? null,
     };
   }

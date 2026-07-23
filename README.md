@@ -45,9 +45,10 @@ npm run dev
 - `src/pages/`: page composition and transient selection/player coordination.
 - `test/`: unit and focused UI tests mirroring source responsibilities.
 
-Application providers are composed in `main.tsx`. `SoundSearchPage` combines the
-search/results, preview/player, and recent-search panels. Components receive
-provider-neutral `Sound` values and callbacks, not Mixcloud types or HTTP access.
+The active provider is composed in `src/api/provider.ts`. `SoundSearchPage`
+combines the search/results, preview/player, and recent-search panels. Components
+receive provider-neutral `Sound` values and callbacks, not Mixcloud types or HTTP
+access.
 
 ```ts
 interface SoundProvider {
@@ -108,7 +109,7 @@ and mounts no iframe.
 
 ## Testing
 
-The current Vitest suite contains 38 tests across nine files using React Testing
+The current Vitest suite contains 39 tests across nine files using React Testing
 Library, user-event, and jsdom. Coverage includes:
 
 - history normalization/deduplication and storage validation;
