@@ -138,3 +138,7 @@ UI tests assert behavior and accessibility rather than pixel-level animation tra
 2. Check mouse/keyboard selection, List/Tile motion, focus, and reduced motion.
 3. Confirm lazy iframe loading, autoplay request behavior, and manual Play fallback.
 4. Exercise preview resets, missing media, responsive layout, focus, and touch targets.
+
+## Live Demo
+
+[Open the sound search application](https://sound-search-exam.vercel.app/)
