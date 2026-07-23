@@ -4,20 +4,25 @@ A responsive React + TypeScript single-page application for searching, paging
 through, selecting, and playing sounds. Mixcloud is the initial provider, but its
 payloads, paging URLs, and widget construction stay isolated from UI and client state.
 
+## Live Demo
+
+[Open the sound search application](https://sound-search-exam.vercel.app/)
+
 ## Features
 
 - Debounced search with immediate Go/Enter submission and up to six results.
 - Provider-cursor Previous/Next navigation with loading, empty, error, and Retry states.
 - Five deduplicated recent searches persisted in localStorage.
 - Keyboard-accessible selection with Framer Motion artwork travel/fade.
-- Focus transfer to the selected artwork and a `prefers-reduced-motion` fallback.
+- Focus transfer to the selected artwork, reduced-motion support, and mobile/tablet preview centering.
 - Persisted compact List and responsive artwork Tile layouts.
 - Player iframe mounted only after explicit selected-artwork activation.
-- Responsive three-panel desktop layout that stacks on smaller screens.
+- Responsive three-panel desktop layout that stacks cleanly across tablet and phone widths.
+- Pagination preserves scroll position and keyboard focus while a page transition is pending.
 
 ## Setup and Commands
 
-Requirements: Node.js 18+, npm, and latest stable Chrome for browser verification.
+Requirements: Node.js 18+, npm, and the latest stable Chrome for browser verification.
 
 ```bash
 npm install
@@ -32,7 +37,6 @@ npm run dev
 | `npm run lint`       | Run TypeScript validation     |
 | `npm test`           | Run Vitest once               |
 | `npm run test:watch` | Run Vitest in watch mode      |
-| `npm run test:ui`    | Open the Vitest UI            |
 
 ## Architecture and Provider Boundary
 
@@ -43,6 +47,7 @@ npm run dev
 - `src/hooks/`: React Query and Redux orchestration for UI actions.
 - `src/components/`: reusable provider-neutral presentation.
 - `src/pages/`: page composition and transient selection/player coordination.
+- `src/styles/`: shared responsive runtime constants.
 - `test/`: unit and focused UI tests mirroring source responsibilities.
 
 The active provider is composed in `src/api/provider.ts`. `SoundSearchPage`
@@ -82,6 +87,19 @@ replacement; an input edit does not alter the currently displayed results.
 Recent searches are recorded only after a successful current first-page response.
 Storage failures and malformed persisted values fall back safely.
 
+## Data Flow
+
+1. The user submits a query through the search form, a recent-search button, or
+   pagination controls.
+2. `useSoundSearch` normalizes the input and coordinates Redux cursor state with
+   a React Query key containing the provider ID, query, and opaque cursor.
+3. React Query invokes the active `SoundProvider` with an `AbortSignal`.
+4. The Mixcloud adapter maps provider payloads into provider-neutral `Sound`
+   values and returns validated next/previous cursor URLs.
+5. `SoundSearchPage` passes data and callbacks to presentation components.
+6. Successful first-page searches update the persisted recent-search history;
+   successful pagination transitions update cursor history.
+
 ## Async and Cursor Safety
 
 - Input is normalized and searched after about 300ms; Go, Enter, and recent
@@ -99,13 +117,21 @@ Storage failures and malformed persisted values fall back safely.
 Results are semantic buttons supporting click, Enter, and Space. Framer Motion
 uses `LayoutGroup`, `AnimatePresence`, and matching `layoutId` values to move the
 selected artwork while removing only its source. A new selection restores the
-previous source. Destination focus uses `preventScroll: true`; reduced-motion
-users get an immediate transition with the same keyboard behavior.
+previous source.
+
+Destination focus uses `preventScroll: true`; reduced-motion users get an
+immediate transition with the same keyboard behavior. Below the desktop breakpoint,
+selecting a result centers the focused preview artwork in the viewport. On desktop,
+selection transfers focus without programmatic scrolling.
 
 The selected artwork is the only control that mounts the iframe. It uses
 `Sound.embedUrl` unchanged, a provider-neutral title, and `allow="autoplay"`.
 Repeated activation is idempotent. A null embed URL shows "Playback unavailable"
 and mounts no iframe.
+
+On mobile and tablet widths, activating a recent search scrolls to the top while
+preserving keyboard focus on the activated button. Previous and Next preserve both
+scroll position and button focus at every viewport width.
 
 ## Testing
 
@@ -116,10 +142,12 @@ Library, user-event, and jsdom. Coverage includes:
 - cursor transitions, resets, and stale completion rejection;
 - Axios cancellation/error normalization and Mixcloud response mapping;
 - debounce, immediate search, stale isolation, history, and navigation locks;
-- List/Tile semantics, keyboard selection, focus transfer, media fallbacks,
-  lazy/idempotent player mounting, preview resets, and preference persistence.
+- List/Tile semantics, keyboard selection, focus transfer, mobile scroll behavior,
+  media fallbacks, lazy/idempotent player mounting, preview resets, and preference
+  persistence.
 
-UI tests assert behavior and accessibility rather than pixel-level animation transforms.
+UI tests assert behavior and accessibility rather than pixel-level animation
+transforms.
 
 ## Mixcloud and Browser Limitations
 
@@ -132,13 +160,12 @@ UI tests assert behavior and accessibility rather than pixel-level animation tra
 - Remote artwork may fail or load slowly; fixed aspect ratios and fallbacks avoid
   making layout stability depend on image success.
 
-## Manual Chrome Verification
+### Search Availability Note
 
-1. Verify real Mixcloud search, CORS behavior, cursor paging, and Retry states.
-2. Check mouse/keyboard selection, List/Tile motion, focus, and reduced motion.
-3. Confirm lazy iframe loading, autoplay request behavior, and manual Play fallback.
-4. Exercise preview resets, missing media, responsive layout, focus, and touch targets.
+During QA tests on 23 July 2026, Mixcloud's public REST search endpoint and
+Mixcloud's own web-search request returned empty result sets for multiple common
+queries across independent networks. Profile cloudcast endpoints still returned
+data.
 
-## Live Demo
-
-[Open the sound search application](https://sound-search-exam.vercel.app/)
+The application handles this as a normal empty-result state; no mock data,
+unrelated fallback results, or undocumented API integration is used.
