@@ -69,7 +69,10 @@ describe("SearchResults", () => {
       <SearchResults {...defaultProps()} viewMode="tile" />,
     );
 
-    expect(container.querySelector("ul")).toHaveClass("grid", "grid-cols-2");
+    expect(container.querySelector("ul")).toHaveClass(
+      "grid",
+      "grid-cols-[repeat(auto-fit,minmax(min(100%,10rem),1fr))]",
+    );
     expect(
       screen.getByRole("button", { name: "Select Aurora Session" }),
     ).toBeInTheDocument();

@@ -12,13 +12,13 @@ export function ViewModeToggle({
   return (
     <div
       aria-label="Result view"
-      className="inline-flex rounded-xl border border-surface-border bg-slate-950/40 p-1"
+      className="inline-flex w-full min-w-0 max-w-full rounded-xl border border-surface-border bg-slate-950/40 p-1 min-[420px]:w-auto"
       role="group"
     >
       {(["list", "tile"] as const).map((mode) => (
         <button
           aria-pressed={viewMode === mode}
-          className={`min-h-10 rounded-lg px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+          className={`min-h-10 min-w-0 flex-1 rounded-lg px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent min-[420px]:flex-none ${
             viewMode === mode
               ? "bg-accent text-white shadow"
               : "text-slate-400 hover:bg-white/5 hover:text-white"

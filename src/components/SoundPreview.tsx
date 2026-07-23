@@ -27,7 +27,7 @@ export function SoundPreview({
   }, [sound]);
 
   return (
-    <div className="mt-5">
+    <div className="mt-4 min-w-0 max-w-full min-[420px]:mt-5">
       <p aria-live="polite" className="sr-only">
         {sound
           ? `${sound.title} selected. ${
@@ -42,7 +42,7 @@ export function SoundPreview({
         {sound ? (
           <motion.div
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center"
+            className="flex w-full min-w-0 max-w-full flex-col items-center"
             exit={shouldReduceMotion ? undefined : { opacity: 0 }}
             initial={shouldReduceMotion ? false : { opacity: 0 }}
             key={sound.id}
@@ -59,7 +59,7 @@ export function SoundPreview({
                     : `Load player for ${sound.title}`
                   : `Playback unavailable for ${sound.title}`
               }
-              className="group w-full max-w-sm rounded-3xl text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent/50"
+              className="group w-full min-w-0 max-w-sm rounded-2xl text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent/50 min-[420px]:rounded-3xl"
               onClick={() => {
                 if (hasEmbedUrl && !isPlayerMounted) {
                   onRequestPlayer();
@@ -69,7 +69,7 @@ export function SoundPreview({
               type="button"
             >
               <motion.span
-                className="relative block aspect-square overflow-hidden rounded-3xl border border-white/10 bg-slate-900 shadow-2xl shadow-black/40"
+                className="relative block aspect-square w-full max-w-full overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-2xl shadow-black/40 min-[420px]:rounded-3xl"
                 layoutId={
                   shouldReduceMotion ? undefined : `sound-artwork:${sound.id}`
                 }
@@ -93,14 +93,14 @@ export function SoundPreview({
                   </span>
                 )}
                 {hasEmbedUrl ? (
-                  <span className="absolute inset-x-4 bottom-4 rounded-full bg-slate-950/80 px-4 py-2 text-center text-sm font-semibold text-white backdrop-blur transition group-hover:bg-accent/90">
+                  <span className="absolute inset-x-2 bottom-2 rounded-full bg-slate-950/80 px-2 py-2 text-center text-xs font-semibold text-white backdrop-blur transition group-hover:bg-accent/90 min-[420px]:inset-x-4 min-[420px]:bottom-4 min-[420px]:px-4 min-[420px]:text-sm">
                     {isPlayerMounted ? "Player loaded" : "Load player"}
                   </span>
                 ) : null}
               </motion.span>
             </button>
 
-            <h3 className="mt-5 text-center text-lg font-semibold text-white">
+            <h3 className="mt-4 max-w-full break-words text-center text-base font-semibold text-white min-[420px]:mt-5 min-[420px]:text-lg">
               {sound.title}
             </h3>
             {hasEmbedUrl ? (
@@ -118,7 +118,7 @@ export function SoundPreview({
         ) : (
           <motion.div
             animate={{ opacity: 1 }}
-            className="mx-auto flex aspect-square w-full max-w-sm flex-col items-center justify-center rounded-3xl border border-dashed border-surface-border bg-slate-950/30 p-8 text-center"
+            className="mx-auto flex aspect-square w-full min-w-0 max-w-sm flex-col items-center justify-center rounded-2xl border border-dashed border-surface-border bg-slate-950/30 p-4 text-center min-[420px]:rounded-3xl min-[420px]:p-8"
             exit={shouldReduceMotion ? undefined : { opacity: 0 }}
             initial={shouldReduceMotion ? false : { opacity: 0 }}
             key="empty-preview"
@@ -140,7 +140,7 @@ export function SoundPreview({
       {sound !== null && hasEmbedUrl && isPlayerMounted ? (
         <motion.div
           animate={{ opacity: 1, y: 0 }}
-          className="mt-6 overflow-hidden rounded-2xl border border-surface-border bg-white shadow-xl shadow-black/20"
+          className="mt-5 w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-surface-border bg-white shadow-xl shadow-black/20 min-[420px]:mt-6"
           id={PLAYER_ID}
           initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
           key={sound.id}
@@ -148,7 +148,7 @@ export function SoundPreview({
         >
           <iframe
             allow="autoplay"
-            className="block h-32 w-full border-0"
+            className="block aspect-[3/1] min-h-32 w-full max-w-full border-0"
             src={embedUrl}
             title={`Player for ${sound.title}`}
           />

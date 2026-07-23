@@ -92,15 +92,15 @@ export function SoundSearchPage() {
   }
 
   return (
-    <main className="mx-auto min-h-full w-full max-w-[90rem] px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-      <header className="mb-8 max-w-3xl">
-        <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-blue-300">
+    <main className="mx-auto min-h-full w-full max-w-[90rem] px-2 py-5 min-[420px]:px-4 min-[420px]:py-8 min-[600px]:px-6 lg:px-8 lg:py-12">
+      <header className="mb-5 max-w-3xl min-[420px]:mb-8">
+        <p className="mb-2 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-blue-300 min-[420px]:mb-3 min-[420px]:text-xs min-[420px]:tracking-[0.24em]">
           Discover something worth hearing
         </p>
-        <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+        <h1 className="text-3xl font-bold tracking-tight text-white min-[420px]:text-4xl min-[600px]:text-5xl">
           Sound Search
         </h1>
-        <p className="mt-4 max-w-2xl text-base leading-7 text-slate-400">
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 min-[420px]:mt-4 min-[420px]:text-base min-[420px]:leading-7">
           Search mixes, move through provider pages, and choose artwork to load
           the player.
         </p>
@@ -108,12 +108,12 @@ export function SoundSearchPage() {
 
       <MotionConfig reducedMotion="user">
         <LayoutGroup id="sound-selection">
-          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.85fr)_minmax(14rem,0.6fr)]">
+          <div className="grid min-w-0 items-start gap-3 min-[420px]:gap-4 min-[600px]:gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.85fr)_minmax(14rem,0.6fr)]">
             <section
               aria-labelledby="search-heading"
-              className="rounded-3xl border border-white/10 bg-surface-raised/90 p-5 shadow-2xl shadow-black/20 backdrop-blur sm:p-6"
+              className="min-w-0 rounded-2xl border border-white/10 bg-surface-raised/90 p-3 shadow-2xl shadow-black/20 backdrop-blur min-[420px]:rounded-3xl min-[420px]:p-5 min-[600px]:p-6"
             >
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex min-w-0 items-start justify-between gap-2 min-[420px]:gap-4">
                 <div>
                   <h2
                     className="text-xl font-semibold text-white"
@@ -126,7 +126,7 @@ export function SoundSearchPage() {
                   </p>
                 </div>
                 {search.activeQuery ? (
-                  <span className="hidden max-w-40 truncate rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-medium text-blue-200 sm:block">
+                  <span className="hidden max-w-40 truncate rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-medium text-blue-200 min-[600px]:block">
                     {search.activeQuery}
                   </span>
                 ) : null}
@@ -138,7 +138,7 @@ export function SoundSearchPage() {
                 query={search.query}
               />
 
-              <div className="mt-7 border-t border-white/10 pt-6">
+              <div className="mt-5 min-w-0 border-t border-white/10 pt-4 min-[420px]:mt-7 min-[420px]:pt-6">
                 <h2
                   className="text-lg font-semibold text-white"
                   id="results-heading"
@@ -161,7 +161,7 @@ export function SoundSearchPage() {
 
               <nav
                 aria-label="Search result controls"
-                className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5"
+                className="mt-5 flex min-w-0 flex-col items-stretch gap-3 border-t border-white/10 pt-4 min-[420px]:mt-6 min-[420px]:flex-row min-[420px]:flex-wrap min-[420px]:items-center min-[420px]:justify-between min-[420px]:pt-5"
               >
                 <Pagination
                   canGoNext={search.canGoNext}
@@ -179,7 +179,7 @@ export function SoundSearchPage() {
 
             <section
               aria-labelledby="preview-heading"
-              className="rounded-3xl border border-white/10 bg-surface-raised/90 p-5 shadow-2xl shadow-black/20 backdrop-blur sm:p-6 lg:sticky lg:top-6"
+              className="min-w-0 rounded-2xl border border-white/10 bg-surface-raised/90 p-3 shadow-2xl shadow-black/20 backdrop-blur min-[420px]:rounded-3xl min-[420px]:p-5 min-[600px]:p-6 lg:sticky lg:top-6"
             >
               <h2
                 className="text-xl font-semibold text-white"
@@ -197,7 +197,7 @@ export function SoundSearchPage() {
 
             <aside
               aria-labelledby="recent-heading"
-              className="rounded-3xl border border-white/10 bg-surface-raised/90 p-5 shadow-2xl shadow-black/20 backdrop-blur sm:p-6"
+              className="min-w-0 rounded-2xl border border-white/10 bg-surface-raised/90 p-3 shadow-2xl shadow-black/20 backdrop-blur min-[420px]:rounded-3xl min-[420px]:p-5 min-[600px]:p-6"
             >
               <h2
                 className="text-xl font-semibold text-white"
@@ -217,7 +217,7 @@ export function SoundSearchPage() {
                   {recentSearches.map((recentQuery) => (
                     <li key={recentQuery}>
                       <button
-                        className="min-h-11 w-full truncate rounded-xl border border-transparent bg-slate-950/30 px-3 text-left text-sm text-slate-300 transition hover:border-accent/40 hover:bg-accent/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                        className="min-h-11 w-full min-w-0 max-w-full truncate rounded-xl border border-transparent bg-slate-950/30 px-3 text-left text-sm text-slate-300 transition hover:border-accent/40 hover:bg-accent/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                         onClick={() => handleRecentSearch(recentQuery)}
                         type="button"
                       >

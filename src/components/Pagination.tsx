@@ -14,9 +14,9 @@ export function Pagination({
   onNext,
 }: PaginationProps) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
       <button
-        className="min-h-10 rounded-xl border border-surface-border bg-slate-950/40 px-3 text-sm font-semibold text-slate-200 transition hover:border-accent/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-40"
+        className="min-h-10 min-w-0 flex-1 rounded-xl border border-surface-border bg-slate-950/40 px-3 text-sm font-semibold text-slate-200 transition hover:border-accent/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-40 min-[420px]:flex-none"
         disabled={!canGoPrevious}
         onClick={onPrevious}
         type="button"
@@ -24,7 +24,7 @@ export function Pagination({
         Previous
       </button>
       <button
-        className="min-h-10 rounded-xl border border-surface-border bg-slate-950/40 px-3 text-sm font-semibold text-slate-200 transition hover:border-accent/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-40"
+        className="min-h-10 min-w-0 flex-1 rounded-xl border border-surface-border bg-slate-950/40 px-3 text-sm font-semibold text-slate-200 transition hover:border-accent/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-40 min-[420px]:flex-none"
         disabled={!canGoNext}
         onClick={onNext}
         type="button"

@@ -61,8 +61,8 @@ export function SearchResults({
       aria-label="Sound search results"
       className={
         viewMode === "tile"
-          ? "mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3"
-          : "mt-4 space-y-2"
+          ? "mt-4 grid min-w-0 max-w-full grid-cols-[repeat(auto-fit,minmax(min(100%,10rem),1fr))] gap-2 min-[420px]:gap-3"
+          : "mt-4 min-w-0 max-w-full space-y-2"
       }
     >
       <AnimatePresence initial={false}>
@@ -70,7 +70,7 @@ export function SearchResults({
           .filter((sound) => sound.id !== selectedSoundId)
           .map((sound) => (
             <motion.li
-              className="min-w-0"
+              className="min-w-0 max-w-full"
               exit={
                 shouldReduceMotion ? undefined : { opacity: 0, scale: 0.96 }
               }
@@ -82,7 +82,7 @@ export function SearchResults({
                 aria-label={
                   viewMode === "tile" ? `Select ${sound.title}` : undefined
                 }
-                className={`group w-full overflow-hidden border border-surface-border bg-surface-raised text-left transition hover:-translate-y-0.5 hover:border-accent/60 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
+                className={`group w-full min-w-0 max-w-full overflow-hidden border border-surface-border bg-surface-raised text-left transition hover:-translate-y-0.5 hover:border-accent/60 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
                   viewMode === "tile"
                     ? "h-full rounded-2xl"
                     : "flex min-h-16 items-center gap-3 rounded-xl p-2"
@@ -123,7 +123,7 @@ export function SearchResults({
                 <span
                   className={`block min-w-0 font-medium text-slate-100 ${
                     viewMode === "tile"
-                      ? "px-3 py-3 text-sm leading-5"
+                      ? "break-words px-3 py-3 text-sm leading-5"
                       : "truncate pr-3"
                   }`}
                 >
